@@ -272,7 +272,7 @@ html,body{height:100%;font-family:'Jost',sans-serif;background:var(--cream);colo
   </div>
 </div>
 <script>
-var API_KEY = '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';
+var PROXY_URL = 'https://clinic-fax-proxy.sam-98f.workers.dev/';
 var MODEL = 'claude-sonnet-4-5';
 var LOGO_SRC = document.getElementById('logo-data').src;
 
@@ -449,13 +449,10 @@ function setLayout(l){
 }
 
 async function callClaude(messages, system){
-  var response = await fetch('https://api.anthropic.com/v1/messages',{
+  var response = await fetch(PROXY_URL,{
     method:'POST',
     headers:{
-      'Content-Type':'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
+      'Content-Type':'application/json'
     },
     body: JSON.stringify({model:MODEL, max_tokens:2000, system:system, messages:messages})
   });
