@@ -166,6 +166,15 @@ html,body{height:100%;font-family:'Jost',sans-serif;background:var(--cream);colo
           <button class="tog" id="lay-one" onclick="setLayout('one')">Single column</button>
         </div>
       </div>
+
+      <div class="control-block">
+        <label>Density</label>
+        <div class="toggle-row">
+          <button class="tog" id="den-concise" onclick="setDensity('concise')">Concise</button>
+          <button class="tog on" id="den-standard" onclick="setDensity('standard')">Standard</button>
+          <button class="tog" id="den-detailed" onclick="setDensity('detailed')">Detailed</button>
+        </div>
+      </div>
       <div class="field">
         <label>Border style</label>
         <select id="border-style">
@@ -295,6 +304,7 @@ var DEFAULT_TEMPLATES = [
 ];
 
 var layout = 'two';
+var density = 'standard';
 var logoPos = "center";
 var customLogoSrc = null;
 
@@ -421,6 +431,8 @@ document.getElementById('new-fax-name').addEventListener('keydown',function(e){i
 function resetDefaults(){
   // Layout
   setLayout("two");
+  // Density
+  setDensity("standard");
   // Border
   document.getElementById("border-style").value = "classic";
   // Font
@@ -449,6 +461,13 @@ function setLayout(l){
   if(currentFaxData)renderFax(currentFaxData);
 }
 
+function setDensity(d){
+  density=d;
+  document.getElementById('den-concise').classList.toggle('on',d==='concise');
+  document.getElementById('den-standard').classList.toggle('on',d==='standard');
+  document.getElementById('den-detailed').classList.toggle('on',d==='detailed');
+}
+
 async function callClaude(messages, system){
   var response = await fetch(PROXY_URL,{
     method:'POST',
@@ -475,8 +494,13 @@ async function generateFax(){
 
   var angles = ['fastest access and appointment speed','diagnostic precision and advanced imaging technology','patient experience and respiratory comfort','referring physician partnership and reporting','same-day urgent referral pathway','early detection and lung cancer screening outcomes','specialized pulmonary expertise and multidisciplinary review','evidence-based protocols and reporting turnaround'];
   var angle = angles[Math.floor(Math.random() * angles.length)];
+  var densitySpec = {
+    concise:  'DENSITY: CONCISE. Write tight, scannable copy. Intro = 1 sentence (max 20 words). Each bullet = 6 to 10 words, ONE line only — no parentheticals, no examples in the bullet. CTA = 1 short sentence (max 15 words). Cut every word that does not earn its place.',
+    standard: 'DENSITY: STANDARD. Intro = 2 short sentences (max 40 words total). Each bullet = 10 to 16 words, fits on 1 to 2 lines. CTA = 1 sentence (max 25 words). Be specific but trim filler.',
+    detailed: 'DENSITY: DETAILED. Intro = 2 to 3 sentences (max 60 words). Each bullet = 15 to 25 words, may include a brief parenthetical example. CTA = 1 to 2 sentences (max 35 words). Still no fluff — detail must add clinical value.'
+  }[density];
   var system = 'You are a senior medical marketing strategist specializing in Canadian physician referral communications. You do NOT write generic faxes. Every fax must have a distinct editorial angle — a specific story, hook, or perspective that makes it memorable and different from any other fax on the same topic. Return ONLY a valid JSON object, no markdown, no backticks. CRITICAL: The CTA field must NEVER contain phone numbers, fax numbers, or any contact details — those appear on a separate contact line below the CTA. The CTA is a pure call-to-action sentence only.';
-  var userMsg = 'Write a physician referral fax for TLC Lung Diagnostics, a pulmonary diagnostics and imaging clinic. Fax title: "' + templateName + '". Layout: ' + (layout==='two'?'two columns':'single column') + '. EDITORIAL ANGLE FOR THIS FAX: ' + angle + '. This angle must drive every word — the headline, subheadline, intro, bullet points, and CTA must all tell a coherent story built around this specific angle. Do NOT write a generic list of services. Write like a strategist with a point of view. Additional clinic notes to incorporate: ' + (bullets||'none provided - use your expert judgment for this fax type') + '. IMPORTANT: Every section must feel like it belongs to the same editorial angle. The headline should be punchy and specific, not generic. The CTA should match the angle tone and must be a pure call-to-action sentence — do NOT include phone numbers, fax numbers, or contact details in the CTA text (those appear on a separate contact line). Do NOT mention any individual physician by name — keep references to the clinical team generic (e.g. "our pulmonary radiologists", "our diagnostic team"). Return ONLY this JSON: {"headline":"PUNCHY SPECIFIC HEADLINE IN CAPS","subheadline":"angle-driven subtitle","intro":"2 sentences that hook the referring physician with the angle","col1_title":"heading that fits the angle","col1_items":["specific item 1","specific item 2","specific item 3","specific item 4"],"col2_title":"complementary heading","col2_items":["specific item 1","specific item 2","specific item 3"],"when_title":"When to Refer","when_items":["criterion1","criterion2","criterion3","criterion4"],"cta":"compelling call-to-action sentence that fits the angle — NO phone or fax numbers in this field"}';
+  var userMsg = 'Write a physician referral fax for TLC Lung Diagnostics, a pulmonary diagnostics and imaging clinic. Fax title: "' + templateName + '". Layout: ' + (layout==='two'?'two columns':'single column') + '. ' + densitySpec + ' EDITORIAL ANGLE FOR THIS FAX: ' + angle + '. This angle must drive every word — the headline, subheadline, intro, bullet points, and CTA must all tell a coherent story built around this specific angle. Do NOT write a generic list of services. Write like a strategist with a point of view. Additional clinic notes to incorporate: ' + (bullets||'none provided - use your expert judgment for this fax type') + '. IMPORTANT: Every section must feel like it belongs to the same editorial angle. The headline should be punchy and specific, not generic. The CTA should match the angle tone and must be a pure call-to-action sentence — do NOT include phone numbers, fax numbers, or contact details in the CTA text (those appear on a separate contact line). Do NOT mention any individual physician by name — keep references to the clinical team generic (e.g. "our pulmonary radiologists", "our diagnostic team"). Respect the density spec above — it is not a suggestion, it is a hard requirement. Return ONLY this JSON: {"headline":"PUNCHY SPECIFIC HEADLINE IN CAPS","subheadline":"angle-driven subtitle","intro":"intro per density spec","col1_title":"heading that fits the angle","col1_items":["bullet per density spec","bullet per density spec","bullet per density spec","bullet per density spec"],"col2_title":"complementary heading","col2_items":["bullet per density spec","bullet per density spec","bullet per density spec"],"when_title":"When to Refer","when_items":["criterion per density spec","criterion per density spec","criterion per density spec","criterion per density spec"],"cta":"call-to-action per density spec — NO phone or fax numbers in this field"}';
 
   try {
     var raw = await callClaude([{role:'user',content:userMsg}], system);
